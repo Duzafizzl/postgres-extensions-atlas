@@ -574,6 +574,18 @@
       color: var(--ash);
     }
 
+    .footer-meta {
+      margin-top: 0.75rem;
+      font-size: 0.625rem;
+      letter-spacing: 0.06em;
+      text-transform: none;
+      line-height: 1.6;
+      color: var(--ash);
+      max-width: 36rem;
+    }
+
+    .footer-meta a { color: var(--ember-hot); text-decoration-color: rgba(240, 90, 26, 0.35); }
+
 
     /* icons */
     .h-ico { display: flex; align-items: center; gap: 0.65rem; }
@@ -1646,12 +1658,21 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;      -- schedules (policy!)</pre>
             <thead><tr><th>Date</th><th>Change</th></tr></thead>
             <tbody>
               <tr><td>2026-06-08</td><td>Initial educational guide (cross-domain); superseded project-specific MIU-only doc</td></tr>
+              <tr><td>2026-06-08</td><td>MIU substrate bridge doc + roadmap §3.5; mobile layout fixes</td></tr>
             </tbody>
           </table>
         </div></div>
       </section>
 
-      <footer>substrate atlas · 2026-06-08</footer>
+      <footer>
+        <p>substrate atlas · 2026-06-08</p>
+        <p class="footer-meta">
+          Created with <a href="https://cursor.com" rel="noopener noreferrer">Cursor</a> (AI-assisted)
+          in collaboration with
+          <a href="https://github.com/Duzafizzl/postgres-extensions-atlas">Miu Substrate</a>.
+          Educational reference — human-reviewed; verify before production use.
+        </p>
+      </footer>
     </div>
   </div>
 
