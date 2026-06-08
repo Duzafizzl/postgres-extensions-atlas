@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google" content="notranslate">
+  <meta name="theme-color" content="#080808">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="PostgreSQL Extensions — substrate atlas for data harness builders.">
+  <title>Postgres Extensions · Substrate Atlas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,700;0,800;1,500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --void: #080808;
+      --basalt: #101010;
+      --slate: #1a1a1a;
+      --graphite: #262626;
+      --ash: #888880;
+      --mist: #c8c4bc;
+      --paper: #edeae3;
+      --ember: #f05a1a;
+      --ember-hot: #ff7a2e;
+      --ember-dim: rgba(240, 90, 26, 0.14);
+      --ember-glow: rgba(240, 90, 26, 0.45);
+      --font-display: "Archivo", sans-serif;
+      --font-body: "Newsreader", Georgia, serif;
+      --rail-w: 5.5rem;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+
+    body {
+      background: var(--void);
+      color: var(--mist);
+      font-family: var(--font-body);
+      font-size: 1.0625rem;
+      line-height: 1.72;
+      overflow-x: hidden;
+    }
+
+    /* atmosphere */
+    .atmosphere {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 85% 10%, rgba(240, 90, 26, 0.09) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 10% 90%, rgba(240, 90, 26, 0.05) 0%, transparent 50%),
+        linear-gradient(165deg, var(--void) 0%, #0c0a09 50%, var(--void) 100%);
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.045;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .frame {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: var(--rail-w) 1fr;
+      min-height: 100vh;
+    }
+
+    /* —— timeline rail (infra-map DNA) —— */
+    .rail {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      border-right: 1px solid var(--graphite);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 0;
+      gap: 0;
+    }
+
+    .rail::before {
+      content: "";
+      position: absolute;
+      top: 3rem;
+      bottom: 3rem;
+      left: 50%;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, var(--ember) 8%, var(--ember) 92%, transparent);
+      opacity: 0.35;
+      transform: translateX(-50%);
+    }
+
+    .rail a {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.15rem;
+      padding: 0.65rem 0;
+      text-decoration: none;
+      flex: 1;
+      justify-content: center;
+      min-height: 2.5rem;
+    }
+
+    .rail-num {
+      font-family: var(--font-display);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--ash);
+      letter-spacing: 0.08em;
+      transition: color 0.3s var(--ease-out);
+    }
+
+    .rail-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      border: 1px solid var(--graphite);
+      background: var(--basalt);
+      transition: all 0.35s var(--ease-out);
+    }
+
+    .rail a:hover .rail-num { color: var(--ember-hot); }
+    .rail a:hover .rail-dot {
+      border-color: var(--ember);
+      box-shadow: 0 0 12px var(--ember-glow);
+    }
+
+    .rail a.is-active .rail-num { color: var(--ember-hot); }
+    .rail a.is-active .rail-dot {
+      background: var(--ember);
+      border-color: var(--ember-hot);
+      box-shadow: 0 0 16px var(--ember-glow);
+    }
+
+    /* —— main —— */
+    .main {
+      max-width: 52rem;
+      padding: 0 clamp(1.25rem, 4vw, 3rem) 6rem;
+    }
+
+    .masthead {
+      padding: 3.5rem 0 2.5rem;
+      border-bottom: 1px solid var(--graphite);
+      animation: rise 0.9s var(--ease-out) both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(28px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .masthead-tag {
+      font-family: var(--font-display);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 6.5vw, 3.75rem);
+      font-weight: 800;
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      color: var(--paper);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 em {
+      font-style: normal;
+      display: block;
+      color: var(--ember-hot);
+      text-shadow: 0 0 40px var(--ember-glow);
+    }
+
+    .masthead-lede {
+      font-size: 1.125rem;
+      max-width: 38rem;
+      color: var(--ash);
+    }
+
+    .masthead-lede strong { color: var(--mist); font-weight: 500; }
+
+    .masthead-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem 2.5rem;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--graphite);
+    }
+
+    .meta-block label {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--ash);
+      margin-bottom: 0.25rem;
+    }
+
+    .meta-block span {
+      font-family: var(--font-body);
+      font-size: 0.9375rem;
+      font-style: italic;
+      color: var(--paper);
+    }
+
+    .top-actions { display: none; }
+
+    /* sections */
+    section {
+      padding: 3.5rem 0;
+      border-bottom: 1px solid var(--graphite);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+    }
+
+    section.is-visible { opacity: 1; transform: translateY(0); }
+
+    .sec-label {
+      font-family: var(--font-display);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 0.5rem;
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.35rem, 3vw, 1.75rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      color: var(--paper);
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--paper);
+      margin-bottom: 0.65rem;
+    }
+
+    h3 code {
+      font-family: var(--font-display);
+      font-size: 0.95em;
+      font-weight: 700;
+      font-style: normal;
+      text-transform: lowercase;
+      color: var(--ember-hot);
+    }
+
+    h4 {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--mist);
+      margin-bottom: 0.5rem;
+    }
+
+    p { margin-bottom: 1rem; color: var(--ash); max-width: 40rem; }
+    ul { margin: 0 0 1rem 1.1rem; color: var(--ash); max-width: 40rem; }
+    li { margin-bottom: 0.4rem; }
+    li::marker { color: var(--ember); }
+    strong { color: var(--mist); font-weight: 500; }
+
+    a { color: var(--ember-hot); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(240, 90, 26, 0.4); }
+    a:hover { text-decoration-color: var(--ember-hot); }
+
+    code {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: 0.92em;
+      font-weight: 500;
+      background: var(--slate);
+      padding: 0.1em 0.45em;
+      border-radius: 3px;
+      color: var(--paper);
+    }
+
+    /* tables */
+    .table-panel {
+      margin: 1.5rem 0;
+      border: 1px solid var(--graphite);
+      border-radius: 2px;
+      overflow: hidden;
+      background: var(--basalt);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+
+    th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      font-family: var(--font-display);
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ash);
+      background: var(--slate);
+      border-bottom: 1px solid var(--graphite);
+    }
+
+    td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--graphite);
+      color: var(--ash);
+      vertical-align: top;
+      transition: background 0.2s;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tbody tr:hover td {
+      background: var(--ember-dim);
+      color: var(--mist);
+    }
+
+    td:first-child {
+      color: var(--mist);
+    }
+
+    .col-key td:first-child {
+      font-family: var(--font-display);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: lowercase;
+      color: var(--paper);
+      white-space: nowrap;
+    }
+
+    h4.sub {
+      font-size: 0.8125rem;
+      color: var(--ember);
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    .intro-note {
+      font-size: 1.0625rem;
+      color: var(--ash);
+      max-width: 40rem;
+      margin-top: 1.25rem;
+      margin-bottom: 0;
+    }
+
+    .pattern-note {
+      font-size: 0.9375rem;
+      color: var(--ash);
+      margin-top: 0.75rem;
+    }
+
+    /* code */
+    pre {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      line-height: 1.65;
+      background: #0c0c0c;
+      border: 1px solid var(--graphite);
+      padding: 1.25rem 1.35rem;
+      overflow-x: auto;
+      margin: 1.25rem 0;
+      color: #b8b4ac;
+      position: relative;
+    }
+
+    pre::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(to bottom, var(--ember), var(--ember-hot));
+      box-shadow: 0 0 20px var(--ember-glow);
+    }
+
+    /* extension article */
+    .ext {
+      margin-top: 2.5rem;
+      padding-top: 2.5rem;
+      border-top: 1px dashed var(--graphite);
+    }
+
+    .ext:first-of-type { border-top: none; padding-top: 0; margin-top: 1rem; }
+
+    .callout {
+      border-left: 2px solid var(--ember);
+      padding: 0.5rem 0 0.5rem 1.1rem;
+      margin: 0.75rem 0 1.25rem;
+      font-size: 1rem;
+      color: var(--ash);
+      max-width: 40rem;
+    }
+
+    .callout-warn { border-left-color: #c44; }
+
+    /* mermaid */
+    .diagram {
+      margin: 1.75rem 0;
+      padding: 1.5rem 1rem;
+      background: var(--basalt);
+      border: 1px solid var(--graphite);
+      position: relative;
+    }
+
+    .diagram::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border: 1px solid transparent;
+      background: linear-gradient(135deg, rgba(240,90,26,0.25), transparent 40%, transparent 60%, rgba(240,90,26,0.1)) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .diagram figcaption {
+      font-family: var(--font-display);
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 1rem;
+    }
+
+    .diagram .mermaid { display: flex; justify-content: center; }
+    .diagram .mermaid svg { max-width: 100%; height: auto !important; }
+    .diagram.compact { padding: 1rem 0.75rem; margin-top: 0.75rem; }
+
+    /* pattern grid — diagonal stagger */
+    .patterns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--graphite);
+      margin-top: 1.5rem;
+    }
+
+    .pattern {
+      background: var(--basalt);
+      padding: 1.25rem;
+    }
+
+    .pattern:nth-child(odd) { transform: translateY(0); }
+    .pattern:nth-child(even) { background: #0e0e0e; }
+
+    footer {
+      padding: 3rem 0 0;
+      font-family: var(--font-display);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ash);
+    }
+
+
+    /* icons */
+    .h-ico { display: flex; align-items: center; gap: 0.65rem; }
+    .ico {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 2rem; height: 2rem; flex-shrink: 0;
+      border: 1px solid rgba(240, 90, 26, 0.35);
+      background: var(--ember-dim);
+      color: var(--ember-hot);
+    }
+    .ico svg { width: 1.1rem; height: 1.1rem; stroke: currentColor; fill: none; stroke-width: 1.75; }
+
+    .section-desc { color: var(--ash); max-width: 42rem; margin-bottom: 1.5rem; font-size: 1.05rem; }
+
+    .pattern-legend {
+      display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem;
+      padding: 0.85rem 1rem; margin-bottom: 1.5rem;
+      border: 1px dashed rgba(240, 90, 26, 0.35);
+      background: rgba(240, 90, 26, 0.04);
+      font-size: 0.875rem;
+    }
+    .legend-item strong { color: var(--ember-hot); font-family: var(--font-display); font-size: 0.75rem; }
+
+    .compare-card {
+      border: 1px solid var(--graphite);
+      background: var(--basalt);
+      padding: 1.25rem 1.35rem;
+      transition: border-color 0.3s, box-shadow 0.3s, opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    .compare-card.is-visible { opacity: 1; transform: translateY(0); }
+    .compare-card.is-visible:nth-child(1) { transition-delay: 0ms; }
+    .compare-card.is-visible:nth-child(2) { transition-delay: 80ms; }
+    .compare-card.is-visible:nth-child(3) { transition-delay: 160ms; }
+    .compare-card.is-visible:nth-child(4) { transition-delay: 240ms; }
+    .compare-card.is-visible:nth-child(5) { transition-delay: 320ms; }
+    .compare-card:hover {
+      border-color: rgba(240, 90, 26, 0.35);
+      box-shadow: 0 0 32px rgba(240, 90, 26, 0.08);
+    }
+    /* head-to-head */
+    .compare-grid {
+      display: grid; gap: 1.25rem; margin-top: 1rem;
+    }
+    @media (min-width: 960px) {
+      .compare-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .compare-head {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;
+    }
+    .compare-head h3 {
+      font-family: var(--font-display); font-size: 0.9375rem;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--paper);
+      margin: 0;
+    }
+    .compare-vs {
+      font-family: var(--font-display); font-size: 0.625rem;
+      color: var(--ember); letter-spacing: 0.12em; text-transform: uppercase;
+    }
+    .compare-card table { font-size: 0.875rem; }
+    .compare-card th { width: 28%; }
+    .pick-age, .pick-pg { color: var(--ember-hot); font-weight: 600; }
+    .pick-other { color: var(--ash); }
+
+    /* pattern v2 — readable pipeline */
+    .pattern-v2 {
+      border: 1px solid var(--graphite);
+      background: linear-gradient(135deg, var(--basalt) 0%, #0e0e0e 100%);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out), border-color 0.3s;
+    }
+    .pattern-v2.is-visible { opacity: 1; transform: translateY(0); }
+    .pattern-v2.is-visible .pipe-node {
+      animation: nodeIn 0.55s var(--ease-out) backwards;
+    }
+    .pattern-v2.is-visible .pipe-node:nth-child(1) { animation-delay: 0.05s; }
+    .pattern-v2.is-visible .pipe-node:nth-child(3) { animation-delay: 0.12s; }
+    .pattern-v2.is-visible .pipe-node:nth-child(5) { animation-delay: 0.19s; }
+    .pattern-v2.is-visible .pipe-node:nth-child(7) { animation-delay: 0.26s; }
+    @keyframes nodeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .pattern-v2:hover { border-color: rgba(240, 90, 26, 0.3); }
+
+    .pattern-head {
+      display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.25rem;
+    }
+    .pattern-badge {
+      font-family: var(--font-display); font-weight: 800; font-size: 1.5rem;
+      line-height: 1; color: var(--ember-hot);
+      text-shadow: 0 0 24px var(--ember-glow);
+      min-width: 2rem;
+    }
+    .pattern-head h3 {
+      font-size: 1.05rem; margin-bottom: 0.35rem; text-transform: none; letter-spacing: -0.01em;
+    }
+    .pattern-head p { margin: 0; font-size: 0.9375rem; max-width: none; }
+
+    .pipeline {
+      display: flex; flex-wrap: wrap; align-items: stretch; gap: 0;
+      margin: 1rem 0;
+    }
+    .pipe-node {
+      flex: 1 1 140px; min-width: 120px;
+      border: 1px solid var(--graphite);
+      background: var(--slate);
+      padding: 0.85rem 0.75rem;
+      text-align: center;
+      position: relative;
+    }
+    .pipe-node strong {
+      display: block; font-family: var(--font-display);
+      font-size: 0.75rem; text-transform: lowercase;
+      color: var(--ember-hot); margin-bottom: 0.25rem;
+    }
+    .pipe-node span { font-size: 0.8125rem; color: var(--ash); line-height: 1.35; }
+    .pipe-arrow {
+      display: flex; align-items: center; justify-content: center;
+      width: 1.75rem; color: var(--ember);
+      font-family: var(--font-display); font-size: 1.1rem;
+      animation: arrowPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes arrowPulse {
+      0%, 100% { opacity: 0.35; transform: translateX(0); }
+      50% { opacity: 1; transform: translateX(3px); }
+    }
+    .pipe-hub {
+      flex: 1 1 100%;
+      border: 1px solid rgba(240, 90, 26, 0.45);
+      background: var(--ember-dim);
+      padding: 0.65rem 1rem;
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 0.6875rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ember-hot);
+      margin-top: 0.5rem;
+      animation: hubGlow 3s ease-in-out infinite;
+    }
+    @keyframes hubGlow {
+      0%, 100% { box-shadow: 0 0 0 rgba(240, 90, 26, 0); }
+      50% { box-shadow: 0 0 20px rgba(240, 90, 26, 0.15); }
+    }
+
+    .diagram.is-live svg .flowchart-link { stroke-dasharray: 8 6; animation: dashFlow 1.2s linear infinite; }
+    @keyframes dashFlow { to { stroke-dashoffset: -28; } }
+    .diagram.is-live svg .node rect, .diagram.is-live svg .node polygon, .diagram.is-live svg .node circle {
+      animation: nodeBreath 4s ease-in-out infinite;
+    }
+    @keyframes nodeBreath {
+      0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+      50% { filter: drop-shadow(0 0 6px rgba(240, 90, 26, 0.25)); }
+    }
+
+    .ext-icon { display: inline-flex; vertical-align: middle; margin-right: 0.35rem; color: var(--ember); }
+    .ext-icon svg { width: 1rem; height: 1rem; stroke: currentColor; fill: none; stroke-width: 1.75; }
+
+    @media (max-width: 768px) {
+      .pipeline { flex-direction: column; }
+      .pipe-arrow { transform: rotate(90deg); width: auto; height: 1.5rem; margin: 0 auto; }
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+
+    /* mobile rail → horizontal */
+    @media (max-width: 768px) {
+      .frame { grid-template-columns: 1fr; }
+      .rail {
+        position: relative;
+        height: auto;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0.75rem 1rem;
+        border-right: none;
+        border-bottom: 1px solid var(--graphite);
+        justify-content: flex-start;
+        gap: 0.25rem;
+      }
+      .rail::before { display: none; }
+      .rail a { flex: 0 0 auto; padding: 0.35rem 0.5rem; min-height: auto; }
+      .main { padding: 0 1.15rem 4rem; }
+      .masthead { padding: 2rem 0 1.75rem; }
+      h1 { font-size: 2rem; }
+      .patterns { grid-template-columns: 1fr; }
+      td:first-child { white-space: normal; }
+      .col-key td:first-child { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div class="frame">
+    <nav class="rail" aria-label="Section navigation">
+      <a href="#read" data-sec="read" title="How to read"><span class="rail-num">00</span><span class="rail-dot"></span></a>
+      <a href="#tldr" data-sec="tldr" title="TLDR"><span class="rail-num">01</span><span class="rail-dot"></span></a>
+      <a href="#harness" data-sec="harness" title="Harness idea"><span class="rail-num">02</span><span class="rail-dot"></span></a>
+      <a href="#tier1" data-sec="tier1" title="Tier 1"><span class="rail-num">03</span><span class="rail-dot"></span></a>
+      <a href="#tier2" data-sec="tier2" title="Tier 2"><span class="rail-num">04</span><span class="rail-dot"></span></a>
+      <a href="#tier3" data-sec="tier3" title="Tier 3"><span class="rail-num">05</span><span class="rail-dot"></span></a>
+      <a href="#compare" data-sec="compare" title="Comparisons"><span class="rail-num">06</span><span class="rail-dot"></span></a>
+      <a href="#matrix" data-sec="matrix" title="Decision matrix"><span class="rail-num">07</span><span class="rail-dot"></span></a>
+      <a href="#patterns" data-sec="patterns" title="Patterns"><span class="rail-num">08</span><span class="rail-dot"></span></a>
+      <a href="#install" data-sec="install" title="Install order"><span class="rail-num">09</span><span class="rail-dot"></span></a>
+      <a href="#limits" data-sec="limits" title="Limits"><span class="rail-num">10</span><span class="rail-dot"></span></a>
+      <a href="#security" data-sec="security" title="Security"><span class="rail-num">11</span><span class="rail-dot"></span></a>
+      <a href="#changelog" data-sec="changelog" title="Changelog"><span class="rail-num">12</span><span class="rail-dot"></span></a>
+    </nav>
+
+    <div class="main">
+      <header class="masthead">
+        <p class="masthead-tag">Infrastructure · Substrate Atlas</p>
+        <h1>PostgreSQL<em>Extensions</em></h1>
+        <p class="masthead-lede">
+          <strong>Audience:</strong> Anyone building data harnesses on Postgres — quant researchers,
+          experimental scientists, knowledge engineers, platform builders.<br><br>
+          <strong>Goal:</strong> Understand <em>what each extension does in one line</em> — and <em>which problem it solves in your domain</em>.
+        </p>
+        <p class="intro-note">You do <strong>not</strong> need a separate vector DB, graph DB, and time-series DB if Postgres + extensions fit your scale. This guide helps you choose.</p>
+        <div class="masthead-meta">
+          <div class="meta-block"><label>Coverage</label><span>13 + built-in FTS</span></div>
+          <div class="meta-block"><label>Tier 1</label><span>vector · age · pg_trgm</span></div>
+          <div class="meta-block"><label>Model</label><span>one Postgres hub</span></div>
+        </div>
+      </header>
+
+      <section id="read">
+        <p class="sec-label">Section 00</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>How to read this doc</h2>
+        <div class="table-panel"><div class="table-scroll">
+          <table>
+            <thead><tr><th>Section</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td>TLDR table</td><td>Pick extensions in 60 seconds</td></tr>
+              <tr><td>Per-extension</td><td>Definition → when to use → examples by field</td></tr>
+              <tr><td>Head-to-head</td><td>AGE vs Neo4j, pgvector vs Pinecone, and more</td></tr>
+              <tr><td>Decision matrix</td><td>"I need X" → extension Y</td></tr>
+              <tr><td>Harness patterns</td><td>Four extension stacks — read left to right</td></tr>
+              <tr><td>Install order</td><td>Safe rollout on research or prod server</td></tr>
+            </tbody>
+          </table>
+        </div></div>
+        <p><strong>Built-in (no extension):</strong> PostgreSQL already includes <strong>full-text search</strong> (<code>to_tsvector</code>, <code>tsquery</code>), <strong>JSONB</strong>, <strong>Arrays</strong> and <strong>window functions</strong>. Many projects never need more than that.</p>
+      </section>
+
+      <section id="tldr">
+        <p class="sec-label">Section 01</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>TLDR</h2>
+        <div class="table-panel col-key"><div class="table-scroll">
+          <table>
+            <thead><tr><th>Extension</th><th>TLDR (one line)</th><th>Typical domains</th></tr></thead>
+            <tbody>
+              <tr><td>vector</td><td>Store vectors; find nearest neighbors by cosine/L2 distance</td><td>ML embeddings, semantic search, compound similarity</td></tr>
+              <tr><td>age</td><td>Property <strong>graphs</strong> + <strong>Cypher</strong> inside Postgres</td><td>Networks, supply chains, citation graphs, knowledge graphs</td></tr>
+              <tr><td>pg_trgm</td><td><strong>Fuzzy</strong> text match (typos, near-duplicates)</td><td>Entity names, tickers, chemical synonyms, log grep</td></tr>
+              <tr><td>btree_gin</td><td>Efficient <strong>GIN indexes</strong> on JSONB and composite keys</td><td>Metadata filters, experiment parameters in JSON</td></tr>
+              <tr><td>pg_stat_statements</td><td><strong>Profile</strong> SQL: which queries cost the most time</td><td>Production, heavy notebook-driven workloads</td></tr>
+              <tr><td>pg_cron</td><td><strong>Schedule</strong> SQL inside the database</td><td>Nightly ETL, rollups, model refresh, cleanup</td></tr>
+              <tr><td>ltree</td><td><strong>Tree paths</strong> as a native type (<code>a.b.c.d</code>)</td><td>Taxonomies, BOMs, org charts, folder hierarchies</td></tr>
+              <tr><td>citext</td><td><strong>Case-insensitive</strong> text columns</td><td>Symbols, gene names, user handles</td></tr>
+              <tr><td>timescaledb</td><td><strong>Time-series</strong> hypertables, retention, compression</td><td>Market ticks, sensor streams, lab instrument logs</td></tr>
+              <tr><td>rum / pg_bm25</td><td><strong>Better-ranked</strong> full-text search than default <code>ts_rank</code></td><td>Literature search, document corpora</td></tr>
+              <tr><td>hypopg</td><td>Test <strong>hypothetical indexes</strong> (EXPLAIN only)</td><td>Index tuning before migration</td></tr>
+              <tr><td>pg_repack</td><td><strong>Online</strong> table rewrite to remove bloat</td><td>Long-running append/update tables</td></tr>
+              <tr><td>postgis</td><td><strong>Geometry</strong> and spatial predicates (points, polygons)</td><td>GIS, microscopy coordinates, field sites</td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </section>
+
+      <section id="harness">
+        <p class="sec-label">Section 02</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></span>The harness-building idea</h2>
+        <p>A <strong>data harness</strong> is a stable layer between raw inputs (files, APIs, instruments) and your analysis (Python, R, notebooks, dashboards). Postgres is often enough as the hub.</p>
+        <figure class="diagram">
+          <figcaption>Data flow · substrate layers</figcaption>
+          <pre class="mermaid">
+flowchart TB
+  SRC["Instruments / APIs / Files"]
+  ETL["ETL / ingest"]
+  subgraph PG["PostgreSQL — relational core + extensions"]
+    direction TB
+    V["vector → similarity search"]
+    AGE["age → graph traversal"]
+    TS["timescaledb → time buckets"]
+    GIS["postgis → spatial filters"]
+  end
+  NB["Notebooks"]
+  DASH["Dashboards"]
+  BATCH["Batch jobs"]
+  SRC --> ETL --> PG
+  PG --> NB
+  PG --> DASH
+  PG --> BATCH
+          </pre>
+        </figure>
+        <p><strong>Why extensions instead of many databases?</strong> One backup, one connection model, joins between embeddings and metadata, transactional consistency. <strong>Trade-off:</strong> you must know which extension fits which shape of data.</p>
+      </section>
+
+      <section id="tier1">
+        <p class="sec-label">Section 03</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>Tier 1 — high leverage</h2>
+
+        <article class="ext">
+          <h3><code>vector</code> (pgvector)</h3>
+          <p class="callout"><strong>TLDR:</strong> Adds a <code>vector</code> column type and distance operators for <strong>approximate nearest neighbor</strong> (ANN) search over embeddings.</p>
+          <h4 class="sub">When to use</h4>
+          <ul>
+            <li>Fixed-length numeric vectors (embeddings, spectra fingerprints, latent states).</li>
+            <li>“Find the <em>k</em> most similar rows” is a core query.</li>
+            <li>Vectors <strong>in the same table</strong> as labels, timestamps, and JSON metadata.</li>
+          </ul>
+          <h4 class="sub">When not to use</h4>
+          <p>Billion-scale ANN with strict sub-10ms SLA — you may later shard or add a dedicated vector service. For thousands to low millions of rows, pgvector is often sufficient.</p>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example use</th></tr></thead>
+              <tbody>
+                <tr><td>Quant / ML</td><td>Embed research notes or news headlines; retrieve context for factor models</td></tr>
+                <tr><td>Physics</td><td>Similarity over reduced simulation state vectors; cluster regimes</td></tr>
+                <tr><td>Chemistry</td><td>Molecular fingerprints (ECFP, etc.) stored as vectors; nearest analogs</td></tr>
+                <tr><td>Knowledge systems</td><td>Semantic search over archival text chunks (embedding + <code>content</code> in one row)</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <pre>CREATE EXTENSION vector;
+
+CREATE TABLE compounds (
+  id serial PRIMARY KEY,
+  smiles text,
+  fingerprint vector(2048)
+);
+
+SELECT id, smiles, fingerprint &lt;=&gt; $1 AS distance
+FROM compounds
+ORDER BY distance
+LIMIT 20;</pre>
+        </article>
+
+        <article class="ext">
+          <h3><code>age</code> (Apache AGE)</h3>
+          <p class="callout"><strong>TLDR:</strong> Adds a <strong>labeled property graph</strong> and <strong>openCypher</strong> inside PostgreSQL — graph pattern matching without a separate Neo4j server.</p>
+          <h4 class="sub">When to use</h4>
+          <ul>
+            <li>Relationships are as important as entities (who traded with whom, what cites what, what reacts with what).</li>
+            <li><strong>Multi-hop</strong> queries: “friends of friends”, “supply chain depth 3”, “path from concept A to B”.</li>
+            <li>Graph + SQL joins in <strong>one transaction</strong>.</li>
+          </ul>
+          <h4 class="sub">When not to use</h4>
+          <p>Pure trees (use <code>ltree</code> or adjacency list). Massive graph analytics at internet scale with dedicated ops team — consider a dedicated graph engine.</p>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example use</th></tr></thead>
+              <tbody>
+                <tr><td>Quant Finance</td><td>Counterparty network, correlated exposure paths, instrument dependency graph</td></tr>
+                <tr><td>Physics</td><td>Citation / collaboration networks; coupling between subsystems in a model catalog</td></tr>
+                <tr><td>Chemistry</td><td>Reaction networks: <code>(Molecule)-[:REACTS_IN]-&gt;(Reaction)-[:PRODUCES]-&gt;(Molecule)</code></td></tr>
+                <tr><td>Knowledge systems</td><td><code>(Episode)-[:ABOUT]-&gt;(Person)</code>, <code>(Episode)-[:REFERENCES]-&gt;(Document)</code></td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <figure class="diagram compact">
+            <figcaption>Reaction graph</figcaption>
+            <pre class="mermaid">
+graph LR
+  M1(("Molecule A"))
+  R(("Reaction"))
+  M2(("Molecule B"))
+  M1 -->|REACTS_IN| R -->|PRODUCES| M2
+            </pre>
+          </figure>
+          <pre>CREATE EXTENSION age;
+LOAD 'age';
+
+SELECT * FROM cypher('science_graph', $$
+  MATCH (a:Molecule {name: 'benzene'})-[:REACTS_IN*1..3]-(b:Molecule)
+  RETURN DISTINCT b.name
+$$) AS (name agtype);</pre>
+          <p class="callout"><strong>Note:</strong> AGE implements a <strong>subset</strong> of openCypher. Complex graph algorithms (PageRank at huge scale) may still belong in batch frameworks — but traversal and pattern match often belong here.</p>
+        </article>
+
+        <article class="ext">
+          <h3><code>pg_trgm</code></h3>
+          <p class="callout"><strong>TLDR:</strong> <strong>Trigram</strong> similarity — match strings that are <em>almost</em> equal (typos, formatting differences).</p>
+          <h4 class="sub">When to use</h4>
+          <ul>
+            <li>User-facing search over names, symbols, or labels with inconsistent spelling.</li>
+            <li>Deduplication: “are these two instrument IDs the same?”</li>
+            <li>Joining messy external data to a clean registry.</li>
+          </ul>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example use</th></tr></thead>
+              <tbody>
+                <tr><td>Quant Finance</td><td><code>BRK.A</code>, <code>BRK-A</code>, <code>Berkshire</code> in a corporate-action lookup</td></tr>
+                <tr><td>Physics</td><td>Fuzzy match on experiment IDs or collaborator names in lab notebooks</td></tr>
+                <tr><td>Chemistry</td><td>Synonym resolution: <code>acetone</code> vs. <code>propan-2-one</code> in imported catalogs</td></tr>
+                <tr><td>Knowledge Systems</td><td>Tag search when users type <code>redroom</code> vs. <code>red-room</code> type</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <pre>CREATE EXTENSION pg_trgm;
+
+SELECT name, similarity(name, 'Hilbert space') AS sim
+FROM papers
+WHERE name % 'Hilbert space'
+ORDER BY sim DESC
+LIMIT 10;</pre>
+          <p class="callout callout-warn"><strong>Pitfall:</strong> Short tokens (<code>nic</code>, <code>ion</code>) can false-positive inside longer words — use word boundaries or minimum similarity thresholds in production.</p>
+        </article>
+
+        <article class="ext">
+          <h3><code>btree_gin</code></h3>
+          <p class="callout"><strong>TLDR:</strong> Enables <strong>GIN index</strong> patterns that combine equality and containment — especially powerful for <strong>JSONB</strong> keys and multi-column GIN.</p>
+          <h4 class="sub">When to use</h4>
+          <ul>
+            <li>Heavy filtering on <code>metadata-&gt;&gt;'parameter'</code> or nested JSON experiment configs.</li>
+            <li>You run <code>WHERE properties @&gt; '{"solvent": "water"}'</code> at scale.</li>
+          </ul>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example use</th></tr></thead>
+              <tbody>
+                <tr><td>Quant</td><td>Filter backtest runs by strategy params in JSONB</td></tr>
+                <tr><td>Physics</td><td>Query simulations by lattice size, boundary condition in metadata</td></tr>
+                <tr><td>Chemistry</td><td>Filter reactions by catalyst family in JSON protocol blob</td></tr>
+                <tr><td>Knowledge</td><td>Filter memories by <code>source</code>, <code>person_id</code>, ERIP scores in JSON</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <pre>CREATE EXTENSION btree_gin;
+CREATE INDEX ON runs USING gin ((config->'solver'));</pre>
+        </article>
+      </section>
+
+      <section id="tier2">
+        <p class="sec-label">Section 04</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></span>Tier 2 — operations, time, and structure</h2>
+
+        <article class="ext">
+          <h3><code>pg_stat_statements</code></h3>
+          <p class="callout"><strong>TLDR:</strong> Records <strong>aggregate stats</strong> per normalized SQL statement — the standard way to find slow queries.</p>
+          <p><strong>When to use:</strong> Any database that matters — notebook-driven chaos eventually becomes someone’s 3am incident.</p>
+          <pre>CREATE EXTENSION pg_stat_statements;
+SELECT query, calls, mean_exec_time, total_exec_time
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 15;</pre>
+        </article>
+
+        <article class="ext">
+          <h3><code>pg_cron</code></h3>
+          <p class="callout"><strong>TLDR:</strong> Cron-style <strong>job scheduler</strong> that runs SQL inside Postgres.</p>
+          <h4 class="sub">When to use</h4>
+          <ul>
+            <li>Nightly aggregation, partition maintenance, embedding refresh.</li>
+            <li>Schedules <strong>versioned</strong> next to schema, not scattered on host crontab.</li>
+          </ul>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td>Quant</td><td>Roll up minute bars to daily at market close</td></tr>
+                <tr><td>Physics</td><td>Archive completed simulation batches</td></tr>
+                <tr><td>Chemistry</td><td>Refresh compound property cache from external API</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <pre>CREATE EXTENSION pg_cron;
+SELECT cron.schedule('nightly-rollup', '0 2 * * *', $$CALL rollup_daily()$$);</pre>
+          <p class="callout callout-warn"><strong>Security:</strong> Restrict who can create jobs; treat like superuser capability.</p>
+        </article>
+
+        <article class="ext">
+          <h3><code>ltree</code></h3>
+          <p class="callout"><strong>TLDR:</strong> Stores <strong>materialized paths</strong> in a tree (<code>root.child.grandchild</code>) with fast ancestor/descendant operators.</p>
+          <h4 class="sub">When to use</h4>
+          <ul>
+            <li>Strict hierarchies: taxonomy, file paths, bill of materials.</li>
+            <li>Simpler than a full graph when edges are only parent→child.</li>
+          </ul>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td>Quant</td><td><code>asset.equity.us.tech.AAPL</code> classification path</td></tr>
+                <tr><td>Physics</td><td><code>project.detector.run42.config.v3</code></td></tr>
+                <tr><td>Chemistry</td><td><code>org.chemclasses.alkanes.C12</code></td></tr>
+                <tr><td>Knowledge</td><td><code>collection.person.week.episode</code> container paths</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <pre>CREATE EXTENSION ltree;
+SELECT * FROM nodes WHERE path &lt;@ 'project.detector.run42';</pre>
+          <p><strong>vs AGE:</strong> <code>ltree</code> = trees; <strong>AGE</strong> = arbitrary graphs (cycles, many edge types).</p>
+        </article>
+
+        <article class="ext">
+          <h3><code>citext</code></h3>
+          <p class="callout"><strong>TLDR:</strong> Case-insensitive text type — comparisons ignore case without <code>LOWER()</code> everywhere.</p>
+          <p><strong>When to use:</strong> Symbols, gene names, handles where case drift causes duplicate rows.</p>
+        </article>
+
+        <article class="ext">
+          <h3><code>timescaledb</code></h3>
+          <p class="callout"><strong>TLDR:</strong> First-class <strong>time-series</strong> — automatic partitioning by time, retention policies, compression.</p>
+          <h4 class="sub">When to use</h4>
+          <ul>
+            <li>High ingest rate of <code>(timestamp, value, tags)</code> — market data, sensors, lab instruments.</li>
+            <li>Queries are mostly “range over time” + aggregates.</li>
+          </ul>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td>Quant</td><td>Tick or bar storage; VWAP windows</td></tr>
+                <tr><td>Physics</td><td>DAQ channel streams from an experiment</td></tr>
+                <tr><td>Chemistry</td><td>Chromatography or spectrometer time traces</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <pre>CREATE EXTENSION timescaledb;
+SELECT create_hypertable('sensor_readings', 'time');</pre>
+        </article>
+      </section>
+
+      <section id="tier3">
+        <p class="sec-label">Section 05</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Tier 3 — search quality, tuning, maintenance, space</h2>
+
+        <article class="ext">
+          <h3>Built-in full-text search (<code>tsvector</code> / <code>tsquery</code>)</h3>
+          <p class="callout"><strong>TLDR:</strong> Keyword search with tokenization and ranking — <strong>no extension required</strong>.</p>
+          <p><strong>When to use:</strong> Document bodies, abstracts, log messages — exact and stemmed word match, not embedding similarity.</p>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td>Quant</td><td>Search research PDF extract for “carry trade”</td></tr>
+                <tr><td>Physics</td><td>Grep paper corpus for “renormalization”</td></tr>
+                <tr><td>Chemistry</td><td>Find procedures mentioning “Grignard”</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <pre>CREATE INDEX ON papers USING gin (to_tsvector('english', abstract));
+SELECT title FROM papers
+WHERE to_tsvector('english', abstract) @@ plainto_tsquery('english', 'topological insulator');</pre>
+        </article>
+
+        <article class="ext">
+          <h3><code>rum</code> / <code>pg_bm25</code></h3>
+          <p class="callout"><strong>TLDR:</strong> Full-text indexes with <strong>BM25-style</strong> relevance — often better ranking than <code>ts_rank_cd</code>.</p>
+          <p><strong>When to use:</strong> Large corpora where keyword relevance quality matters (literature, regulations, patents).</p>
+        </article>
+
+        <article class="ext">
+          <h3><code>hypopg</code></h3>
+          <p class="callout"><strong>TLDR:</strong> <strong>Hypothetical indexes</strong> — planner considers them in <code>EXPLAIN</code> without building them.</p>
+          <p><strong>When to use:</strong> Before adding heavy indexes on production tables; compare plan cost estimates.</p>
+        </article>
+
+        <article class="ext">
+          <h3><code>pg_repack</code></h3>
+          <p class="callout"><strong>TLDR:</strong> Rebuilds tables <strong>online</strong> to reclaim space from update/delete bloat.</p>
+          <p><strong>When to use:</strong> Append-heavy or churn-heavy tables (event logs, archival stores) when <code>VACUUM</code> is not enough.</p>
+        </article>
+
+        <article class="ext">
+          <h3><code>postgis</code></h3>
+          <p class="callout"><strong>TLDR:</strong> <strong>Spatial</strong> types and predicates — distance, containment, intersections on Earth or projected CRS.</p>
+          <p><strong>When to use:</strong> Field sampling sites, microscopy stage coordinates, geographic portfolios.</p>
+          <div class="table-panel"><div class="table-scroll">
+            <table>
+              <thead><tr><th>Domain</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td>Quant</td><td>Branch/store locations for regional risk</td></tr>
+                <tr><td>Physics / Earth science</td><td>Sensor geolocation; field campaign sites</td></tr>
+                <tr><td>Chemistry</td><td>Less common — unless environmental sampling maps</td></tr>
+              </tbody>
+            </table>
+          </div></div>
+          <pre>CREATE EXTENSION postgis;
+SELECT id FROM sites
+WHERE ST_DWithin(geom, ST_MakePoint(-73.98, 40.75)::geography, 5000);</pre>
+        </article>
+      </section>
+
+
+      <section id="compare">
+        <p class="sec-label">Section 06</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><line x1="12" y1="8" x2="12" y2="16"/><polyline points="8 12 12 16 16 12"/></svg></span>Head-to-head comparisons</h2>
+        <p class="section-desc">When does a Postgres extension beat a dedicated service — and when does the dedicated tool still win?</p>
+
+        <div class="compare-grid">
+          <article class="compare-card">
+            <div class="compare-head">
+              <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><line x1="8.5" y1="7.5" x2="15.5" y2="16.5"/><line x1="15.5" y1="7.5" x2="8.5" y2="7.5"/></svg></span>
+              <div><p class="compare-vs">Graph</p><h3>Apache AGE vs Neo4j</h3></div>
+            </div>
+            <div class="table-panel"><div class="table-scroll"><table>
+              <thead><tr><th>Dimension</th><th class="pick-age">AGE + Postgres</th><th class="pick-other">Neo4j</th></tr></thead>
+              <tbody>
+                <tr><td>Architecture</td><td>Graph inside your existing DB</td><td>Separate graph server + sync</td></tr>
+                <tr><td>SQL joins</td><td>Native — episodes + metadata in one query</td><td>Requires ETL or app-layer merge</td></tr>
+                <tr><td>Cypher</td><td>openCypher subset</td><td>Full Cypher + graph algos</td></tr>
+                <tr><td>Ops</td><td>One backup, one connection pool</td><td>Two systems to monitor</td></tr>
+                <tr><td>Scale</td><td>Research / platform scale (millions of edges)</td><td>Internet-scale graph analytics</td></tr>
+                <tr><td>Pick AGE when</td><td colspan="2">Graph traversal + relational truth in one transaction; no Neo4j ops budget</td></tr>
+                <tr><td>Pick Neo4j when</td><td colspan="2">Dedicated graph team, heavy GDS algorithms, strict graph-only SLA</td></tr>
+              </tbody>
+            </table></div></div>
+          </article>
+
+          <article class="compare-card">
+            <div class="compare-head">
+              <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+              <div><p class="compare-vs">Vectors</p><h3>pgvector vs Pinecone / Qdrant</h3></div>
+            </div>
+            <div class="table-panel"><div class="table-scroll"><table>
+              <thead><tr><th>Dimension</th><th class="pick-age">pgvector</th><th class="pick-other">Dedicated vector DB</th></tr></thead>
+              <tbody>
+                <tr><td>Data model</td><td>Vectors + JSON metadata in same row</td><td>Vectors often separate from source of truth</td></tr>
+                <tr><td>Filtering</td><td>SQL + GIN on metadata alongside ANN</td><td>Metadata filters vary by vendor</td></tr>
+                <tr><td>Latency at huge scale</td><td>Good to ~low millions; shard later</td><td>Sub-10ms at billions with HNSW tiers</td></tr>
+                <tr><td>Cost</td><td>Postgres you already run</td><td>Extra SaaS or cluster</td></tr>
+                <tr><td>Pick pgvector when</td><td colspan="2">Embeddings live with archival rows; hybrid semantic + SQL filters</td></tr>
+                <tr><td>Pick dedicated when</td><td colspan="2">Global ANN at billions, strict latency SLA, separate vector team</td></tr>
+              </tbody>
+            </table></div></div>
+          </article>
+
+          <article class="compare-card">
+            <div class="compare-head">
+              <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+              <div><p class="compare-vs">Time series</p><h3>TimescaleDB vs InfluxDB</h3></div>
+            </div>
+            <div class="table-panel"><div class="table-scroll"><table>
+              <thead><tr><th>Dimension</th><th class="pick-age">TimescaleDB</th><th class="pick-other">InfluxDB</th></tr></thead>
+              <tbody>
+                <tr><td>Query language</td><td>SQL — joins with relational data</td><td>InfluxQL / Flux</td></tr>
+                <tr><td>Hypertables</td><td>Auto partition + retention in Postgres</td><td>Built for metrics from day one</td></tr>
+                <tr><td>Ecosystem</td><td>Same ORMs, same backups as Postgres</td><td>Separate ingest + tooling</td></tr>
+                <tr><td>Pick Timescale when</td><td colspan="2">Ticks/bars/sensors must join to reference tables in SQL</td></tr>
+                <tr><td>Pick Influx when</td><td colspan="2">Pure metrics pipeline, no relational joins needed</td></tr>
+              </tbody>
+            </table></div></div>
+          </article>
+
+          <article class="compare-card">
+            <div class="compare-head">
+              <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+              <div><p class="compare-vs">Search</p><h3>Postgres FTS vs Elasticsearch</h3></div>
+            </div>
+            <div class="table-panel"><div class="table-scroll"><table>
+              <thead><tr><th>Dimension</th><th class="pick-age">Postgres FTS (+ rum)</th><th class="pick-other">Elasticsearch</th></tr></thead>
+              <tbody>
+                <tr><td>Setup</td><td>Built-in; rum/pg_bm25 for better rank</td><td>Separate cluster + sync pipeline</td></tr>
+                <tr><td>Strength</td><td>Keyword + metadata in one DB</td><td>Full-text at massive doc scale, analyzers</td></tr>
+                <tr><td>Pick Postgres when</td><td colspan="2">Corpus fits in Postgres; hybrid keyword + vector + graph</td></tr>
+                <tr><td>Pick Elasticsearch when</td><td colspan="2">Huge document index, complex analyzers, search-only team</td></tr>
+              </tbody>
+            </table></div></div>
+          </article>
+
+          <article class="compare-card">
+            <div class="compare-head">
+              <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+              <div><p class="compare-vs">Spatial</p><h3>PostGIS vs MongoDB Geo</h3></div>
+            </div>
+            <div class="table-panel"><div class="table-scroll"><table>
+              <thead><tr><th>Dimension</th><th class="pick-age">PostGIS</th><th class="pick-other">MongoDB GeoJSON</th></tr></thead>
+              <tbody>
+                <tr><td>Data model</td><td>Geometry types + SQL joins to relational rows</td><td>GeoJSON documents in a document store</td></tr>
+                <tr><td>Standards</td><td>OGC predicates, CRS, topology, raster</td><td>2dsphere indexes; simpler geo queries</td></tr>
+                <tr><td>Strength</td><td>Field sites + lab metadata + vectors in one query</td><td>Fast geo-in-document apps without SQL</td></tr>
+                <tr><td>Pick PostGIS when</td><td colspan="2">Spatial filters must join experiments, portfolios, or samples in SQL</td></tr>
+                <tr><td>Pick Mongo when</td><td colspan="2">Document-first app; geo is a filter on JSON blobs only</td></tr>
+              </tbody>
+            </table></div></div>
+          </article>
+        </div>
+      </section>
+
+
+      <section id="matrix">
+        <p class="sec-label">Section 07</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>Decision matrix</h2>
+        <div class="table-panel"><div class="table-scroll">
+          <table>
+            <thead><tr><th>You need…</th><th>Start here</th><th>Also consider</th></tr></thead>
+            <tbody>
+              <tr><td>Similarity on embeddings</td><td><strong>vector</strong></td><td>—</td></tr>
+              <tr><td>“Related items” by meaning + filters</td><td><strong>vector</strong> + <strong>btree_gin</strong> on metadata</td><td>—</td></tr>
+              <tr><td>Multi-hop relationships</td><td><strong>age</strong></td><td><strong>ltree</strong> if strict tree only</td></tr>
+              <tr><td>Typo-tolerant name/symbol search</td><td><strong>pg_trgm</strong></td><td><strong>citext</strong> for equality</td></tr>
+              <tr><td>Time-range aggregates at scale</td><td><strong>timescaledb</strong></td><td>native partitioning</td></tr>
+              <tr><td>Keyword search in documents</td><td>Built-in <strong>FTS</strong></td><td><strong>rum</strong> if ranking weak</td></tr>
+              <tr><td>Map / distance queries</td><td><strong>postgis</strong></td><td>—</td></tr>
+              <tr><td>Slow query diagnosis</td><td><strong>pg_stat_statements</strong></td><td>—</td></tr>
+              <tr><td>Scheduled SQL maintenance</td><td><strong>pg_cron</strong></td><td>external orchestrator</td></tr>
+              <tr><td>Index tuning without risk</td><td><strong>hypopg</strong></td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </section>
+
+      <section id="patterns">
+        <p class="sec-label">Section 08</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg></span>Harness patterns</h2>
+        <p class="section-desc">Four ready-made extension stacks. Each row is one layer in the harness — read left to right, then the hub line shows what you get.</p>
+
+        <div class="pattern-legend" aria-label="How to read pattern pipelines">
+          <span class="legend-item"><strong>A → B → C</strong> extension layers in order</span>
+          <span class="legend-item"><strong>→ hub</strong> combined outcome / API surface</span>
+          <span class="legend-item"><strong>animated arrows</strong> data flows left to right</span>
+        </div>
+        <article class="pattern-v2" style="transition-delay: 0ms">
+          <div class="pattern-head">
+            <span class="pattern-badge">A</span>
+            <div>
+              <h3>Semantic lab notebook</h3>
+              <p>Scientists write notes; you need meaning search, fuzzy IDs, and JSON experiment filters — without three databases.</p>
+            </div>
+          </div>
+          <div class="pipeline">
+            <div class="pipe-node"><strong>vector</strong><span>embed note paragraphs</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>pg_trgm</strong><span>fuzzy sample IDs</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>FTS</strong><span>keyword fallback</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>JSONB+gin</strong><span>experiment params</span></div>
+            <div class="pipe-hub">→ unified lab search API</div>
+          </div>
+        </article>
+
+        <article class="pattern-v2" style="transition-delay: 80ms">
+          <div class="pattern-head">
+            <span class="pattern-badge">B</span>
+            <div>
+              <h3>Market + exposure graph</h3>
+              <p>Time-series bars, counterparty relationships, and news context — one harness for quant risk.</p>
+            </div>
+          </div>
+          <div class="pipeline">
+            <div class="pipe-node"><strong>timescaledb</strong><span>bars &amp; ticks</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>age</strong><span>counterparty graph</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>vector</strong><span>news embeddings</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>pg_stat_statements</strong><span>tune hot paths</span></div>
+            <div class="pipe-hub">→ exposure + context dashboard</div>
+          </div>
+        </article>
+
+        <article class="pattern-v2" style="transition-delay: 160ms">
+          <div class="pattern-head">
+            <span class="pattern-badge">C</span>
+            <div>
+              <h3>Chemical intelligence</h3>
+              <p>Fingerprint similarity, reaction networks, and site sampling — chemistry R&amp;D in one Postgres hub.</p>
+            </div>
+          </div>
+          <div class="pipeline">
+            <div class="pipe-node"><strong>vector</strong><span>fingerprint similarity</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>age</strong><span>reaction network</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>postgis</strong><span>site sampling</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>pg_trgm</strong><span>synonym matching</span></div>
+            <div class="pipe-hub">→ compound discovery pipeline</div>
+          </div>
+        </article>
+
+        <article class="pattern-v2" style="transition-delay: 240ms">
+          <div class="pattern-head">
+            <span class="pattern-badge">D</span>
+            <div>
+              <h3>Episodic knowledge archive</h3>
+              <p>Long-horizon agent memory: semantic recall, people/doc graph, fast API reads — no Postgres + Neo4j + vector SaaS.</p>
+            </div>
+          </div>
+          <div class="pipeline">
+            <div class="pipe-node"><strong>vector</strong><span>semantic recall</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>age</strong><span>episode graph</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>pg_trgm</strong><span>fuzzy tags</span></div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-node"><strong>edges table</strong><span>materialized + gin</span></div>
+            <div class="pipe-hub">→ relational truth + materialized links + optional Cypher</div>
+          </div>
+        </article>
+
+        <figure class="diagram pattern-overview">
+          <figcaption>All patterns · one database hub</figcaption>
+          <pre class="mermaid">
+flowchart TB
+  subgraph PA["A · Lab notebook"]
+    direction LR
+    v1[vector] --> h1[(search)]
+    t1[trgm] --> h1
+  end
+  subgraph PB["B · Market graph"]
+    direction LR
+    ts2[timescale] --> h2[(risk)]
+    a2[age] --> h2
+  end
+  subgraph PC["C · Chemistry"]
+    direction LR
+    v3[vector] --> h3[(discovery)]
+    g3[postgis] --> h3
+  end
+  subgraph PD["D · Knowledge"]
+    direction LR
+    v4[vector] --> h4[(memory)]
+    a4[age] --> h4
+  end
+  PG[(PostgreSQL hub)]
+  PA --> PG
+  PB --> PG
+  PC --> PG
+  PD --> PG
+          </pre>
+        </figure>
+      </section>
+
+      <section id="install">
+        <p class="sec-label">Section 09</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>Suggested install order</h2>
+        <p>Any serious Postgres harness — core first, domain-specific when needed.</p>
+        <pre>-- Core analytics
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS btree_gin;
+
+-- Observability
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- Domain-specific (add when needed)
+CREATE EXTENSION IF NOT EXISTS age;          -- graphs
+CREATE EXTENSION IF NOT EXISTS timescaledb;  -- time series
+CREATE EXTENSION IF NOT EXISTS postgis;      -- spatial
+CREATE EXTENSION IF NOT EXISTS pg_cron;      -- schedules (policy!)</pre>
+        <p>Match extension packages to your <strong>Postgres major version</strong> (e.g. <code>postgresql-16-pgvector</code>).</p>
+      </section>
+
+      <section id="limits">
+        <p class="sec-label">Section 10</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>What extensions do <em>not</em> replace</h2>
+        <div class="table-panel"><div class="table-scroll">
+          <table>
+            <thead><tr><th>Need</th><th>Extension helps but…</th></tr></thead>
+            <tbody>
+              <tr><td>Training neural nets</td><td>Store vectors; train in Python/Julia</td></tr>
+              <tr><td>Heavy graph ML (GNN training)</td><td>Export subgraphs to PyG/DGL</td></tr>
+              <tr><td>Sub-millisecond global ANN at billions</td><td>Dedicated vector tier may be needed</td></tr>
+              <tr><td>Full document OCR</td><td>Store text after extraction</td></tr>
+              <tr><td>Real-time stream processing at Kafka scale</td><td>Ingest via stream processor; Postgres as sink</td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </section>
+
+      <section id="security">
+        <p class="sec-label">Section 11</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>Security checklist</h2>
+        <ul>
+          <li>Treat <strong>pg_cron</strong> and <strong>age</strong> as privileged capabilities on shared servers.</li>
+          <li>Do not expose arbitrary Cypher/SQL endpoints to untrusted users without allowlists.</li>
+          <li>Extension install often requires superuser — document who can change <code>shared_preload_libraries</code>.</li>
+          <li>Fuzzy matchers (<strong>pg_trgm</strong>) can leak existence of similar strings — tune thresholds on sensitive data.</li>
+        </ul>
+        <h4 class="sub" style="margin-top:2rem">Further reading</h4>
+        <ul>
+          <li><a href="https://github.com/pgvector/pgvector">pgvector</a> — vector type and indexes</li>
+          <li><a href="https://age.apache.org/">Apache AGE</a> — graph on Postgres</li>
+          <li><a href="https://docs.timescale.com/">TimescaleDB docs</a> — hypertables and compression</li>
+          <li><a href="https://postgis.net/">PostGIS</a> — spatial types</li>
+          <li><a href="https://www.postgresql.org/docs/current/textsearch.html">PostgreSQL Full Text Search</a></li>
+        </ul>
+      </section>
+
+      <section id="changelog">
+        <p class="sec-label">Section 12</p>
+        <h2 class="h-ico"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Changelog</h2>
+        <div class="table-panel"><div class="table-scroll">
+          <table>
+            <thead><tr><th>Date</th><th>Change</th></tr></thead>
+            <tbody>
+              <tr><td>2026-06-08</td><td>Initial educational guide (cross-domain); superseded project-specific MIU-only doc</td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </section>
+
+      <footer>substrate atlas · 2026-06-08</footer>
+    </div>
+  </div>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "loose",
+      theme: "base",
+      themeVariables: {
+        darkMode: true,
+        background: "#101010",
+        primaryColor: "#1a1a1a",
+        primaryTextColor: "#edeae3",
+        primaryBorderColor: "#f05a1a",
+        secondaryColor: "#141414",
+        secondaryTextColor: "#c8c4bc",
+        secondaryBorderColor: "#333330",
+        tertiaryColor: "#0c0c0c",
+        lineColor: "#f05a1a",
+        textColor: "#c8c4bc",
+        mainBkg: "#1a1a1a",
+        nodeBorder: "#444440",
+        clusterBkg: "rgba(240,90,26,0.06)",
+        clusterBorder: "rgba(240,90,26,0.35)",
+        edgeLabelBackground: "#101010",
+        fontFamily: "Archivo, sans-serif",
+        fontSize: "12px"
+      },
+      flowchart: { curve: "basis", padding: 14, htmlLabels: true, useMaxWidth: true }
+    });
+    await mermaid.run();
+    document.querySelectorAll(".diagram").forEach((d) => { if (d.querySelector("svg")) d.classList.add("is-live"); });
+
+    const sections = document.querySelectorAll("section");
+    const railLinks = document.querySelectorAll(".rail a");
+
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) e.target.classList.add("is-visible");
+      });
+    }, { threshold: 0.08, rootMargin: "0px 0px -8% 0px" });
+    sections.forEach((s) => revealObs.observe(s));
+    document.querySelectorAll(".pattern-v2, .compare-card").forEach((el) => revealObs.observe(el));
+
+    function animateDiagrams() {
+      document.querySelectorAll(".diagram").forEach((d) => {
+        const svg = d.querySelector("svg");
+        if (svg) d.classList.add("is-live");
+      });
+    }
+    setTimeout(animateDiagrams, 800);
+    document.addEventListener("animationend", animateDiagrams, { once: false });
+
+    const activeObs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        railLinks.forEach((a) => a.classList.toggle("is-active", a.getAttribute("href") === "#" + e.target.id));
+      });
+    }, { threshold: 0.35, rootMargin: "-20% 0px -55% 0px" });
+    sections.forEach((s) => activeObs.observe(s));
+  </script>
+</body>
+</html>
