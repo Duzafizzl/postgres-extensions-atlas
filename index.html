@@ -34,6 +34,10 @@
 
     html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
 
+    @supports (padding: max(0px)) {
+      body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+    }
+
     body {
       background: var(--void);
       color: var(--mist);
@@ -224,6 +228,53 @@
 
     .top-actions { display: none; }
 
+    /* mobile section jump (hidden on desktop) */
+    .mobile-jump {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      padding: 0.65rem clamp(1rem, 4vw, 1.25rem);
+      padding-top: max(0.65rem, env(safe-area-inset-top));
+      background: rgba(8, 8, 8, 0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--graphite);
+    }
+
+    .mobile-jump label {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ash);
+      margin-bottom: 0.35rem;
+    }
+
+    .section-jump {
+      width: 100%;
+      min-height: 2.75rem;
+      padding: 0.55rem 2.25rem 0.55rem 0.75rem;
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--paper);
+      background: var(--slate);
+      border: 1px solid var(--graphite);
+      border-radius: 2px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f05a1a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+    }
+
+    .section-jump:focus {
+      outline: 2px solid var(--ember);
+      outline-offset: 2px;
+    }
+
     /* sections */
     section {
       padding: 3.5rem 0;
@@ -314,7 +365,15 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
     }
 
-    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+    }
+
+    .table-scroll-hint {
+      display: none;
+    }
 
     table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
 
@@ -654,39 +713,169 @@
     .ext-icon svg { width: 1rem; height: 1rem; stroke: currentColor; fill: none; stroke-width: 1.75; }
 
     @media (max-width: 768px) {
-      .pipeline { flex-direction: column; }
-      .pipe-arrow { transform: rotate(90deg); width: auto; height: 1.5rem; margin: 0 auto; }
+      html { scroll-padding-top: 5.25rem; }
+
+      body { font-size: 1rem; }
+
+      .mobile-jump { display: block; }
+
+      .frame { grid-template-columns: 1fr; }
+
+      .rail { display: none; }
+
+      .main {
+        padding: 0 clamp(1rem, 4vw, 1.25rem) 3rem;
+        max-width: 100%;
+        min-width: 0;
+      }
+
+      .masthead { padding: 1.5rem 0 1.25rem; }
+      .masthead-lede { font-size: 1rem; }
+      .masthead-meta { gap: 1rem 1.5rem; }
+
+      h1 { font-size: clamp(1.75rem, 9vw, 2.25rem); }
+      h2 { font-size: 1.2rem; line-height: 1.25; }
+      h2.h-ico { flex-wrap: wrap; gap: 0.5rem; }
+      h2.h-ico .ico { width: 1.75rem; height: 1.75rem; }
+
+      section { padding: 2.25rem 0; }
+
+      pre {
+        font-size: 0.8125rem;
+        padding: 1rem;
+        max-width: 100%;
+      }
+
+      .diagram {
+        padding: 0.75rem 0.5rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .diagram .mermaid { min-width: 0; justify-content: flex-start; }
+      .diagram .mermaid svg { max-width: none; min-width: 280px; }
+
+      .table-scroll-hint {
+        display: block;
+        padding: 0.4rem 0.75rem 0.55rem;
+        font-family: var(--font-display);
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ash);
+        text-align: center;
+        border-top: 1px solid var(--graphite);
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .col-key .table-scroll table { min-width: 34rem; }
+      .table-panel:not(.compare-card .table-panel) table { min-width: 28rem; }
+
+      th, td { padding: 0.6rem 0.75rem; font-size: 0.875rem; }
+      td:first-child { white-space: normal; }
+      .col-key td:first-child { white-space: nowrap; }
+
+      .pattern-legend { flex-direction: column; gap: 0.5rem; }
+      .pattern-v2 { padding: 1rem; }
+      .pattern-head { flex-direction: column; gap: 0.5rem; }
+
+      .pipeline { flex-direction: column; align-items: stretch; }
+      .pipe-node {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 100%;
+      }
+      .pipe-arrow {
+        transform: rotate(90deg);
+        width: auto;
+        height: 1.25rem;
+        margin: 0.15rem auto;
+      }
+
       .compare-grid { grid-template-columns: 1fr; }
+      .compare-card { padding: 1rem; }
+
+      /* compare tables → stacked cards on phone */
+      .compare-card .table-scroll {
+        overflow: visible;
+      }
+      .compare-card .table-scroll-hint { display: none; }
+      .compare-card table,
+      .compare-card thead,
+      .compare-card tbody,
+      .compare-card tr,
+      .compare-card th,
+      .compare-card td {
+        display: block;
+        width: 100%;
+      }
+      .compare-card thead { display: none; }
+      .compare-card tr {
+        margin-bottom: 0.85rem;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid var(--graphite);
+        background: var(--slate);
+      }
+      .compare-card tr:last-child { margin-bottom: 0; }
+      .compare-card td {
+        border: none;
+        padding: 0.25rem 0;
+      }
+      .compare-card td:first-child {
+        font-family: var(--font-display);
+        font-size: 0.6875rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ember);
+        padding-bottom: 0.35rem;
+      }
+      .compare-card td[colspan="2"] {
+        color: var(--mist);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        padding-top: 0.15rem;
+      }
+
+      .compare-head h3 { font-size: 0.8125rem; }
     }
 
-    /* mobile rail → horizontal */
-    @media (max-width: 768px) {
-      .frame { grid-template-columns: 1fr; }
-      .rail {
-        position: relative;
-        height: auto;
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 0.75rem 1rem;
-        border-right: none;
-        border-bottom: 1px solid var(--graphite);
-        justify-content: flex-start;
-        gap: 0.25rem;
+    @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+      .pipe-arrow,
+      .pipe-hub,
+      .diagram.is-live svg .flowchart-link,
+      .diagram.is-live svg .node rect,
+      .diagram.is-live svg .node polygon,
+      .diagram.is-live svg .node circle {
+        animation: none !important;
       }
-      .rail::before { display: none; }
-      .rail a { flex: 0 0 auto; padding: 0.35rem 0.5rem; min-height: auto; }
-      .main { padding: 0 1.15rem 4rem; }
-      .masthead { padding: 2rem 0 1.75rem; }
-      h1 { font-size: 2rem; }
-      .patterns { grid-template-columns: 1fr; }
-      td:first-child { white-space: normal; }
-      .col-key td:first-child { white-space: normal; }
     }
   </style>
 </head>
 <body>
   <div class="atmosphere" aria-hidden="true"></div>
   <div class="grain" aria-hidden="true"></div>
+
+  <div class="mobile-jump">
+    <label for="section-jump">Jump to section</label>
+    <select id="section-jump" class="section-jump" aria-label="Jump to section">
+      <option value="">Choose section…</option>
+      <option value="#read">00 · How to read</option>
+      <option value="#tldr">01 · TLDR</option>
+      <option value="#harness">02 · Harness idea</option>
+      <option value="#tier1">03 · Tier 1</option>
+      <option value="#tier2">04 · Tier 2</option>
+      <option value="#tier3">05 · Tier 3</option>
+      <option value="#compare">06 · Comparisons</option>
+      <option value="#matrix">07 · Decision matrix</option>
+      <option value="#patterns">08 · Patterns</option>
+      <option value="#install">09 · Install order</option>
+      <option value="#limits">10 · Limits</option>
+      <option value="#security">11 · Security</option>
+      <option value="#changelog">12 · Changelog</option>
+    </select>
+  </div>
 
   <div class="frame">
     <nav class="rail" aria-label="Section navigation">
@@ -1400,6 +1589,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;      -- schedules (policy!)</pre>
 
   <script type="module">
     import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: "loose",
@@ -1422,9 +1612,9 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;      -- schedules (policy!)</pre>
         clusterBorder: "rgba(240,90,26,0.35)",
         edgeLabelBackground: "#101010",
         fontFamily: "Archivo, sans-serif",
-        fontSize: "12px"
+        fontSize: isMobile ? "10px" : "12px"
       },
-      flowchart: { curve: "basis", padding: 14, htmlLabels: true, useMaxWidth: true }
+      flowchart: { curve: "basis", padding: isMobile ? 8 : 14, htmlLabels: true, useMaxWidth: true }
     });
     await mermaid.run();
     document.querySelectorAll(".diagram").forEach((d) => { if (d.querySelector("svg")) d.classList.add("is-live"); });
@@ -1456,6 +1646,25 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;      -- schedules (policy!)</pre>
       });
     }, { threshold: 0.35, rootMargin: "-20% 0px -55% 0px" });
     sections.forEach((s) => activeObs.observe(s));
+
+    document.querySelectorAll(".table-scroll").forEach((el) => {
+      if (el.closest(".compare-card") || el.querySelector(".table-scroll-hint")) return;
+      const hint = document.createElement("p");
+      hint.className = "table-scroll-hint";
+      hint.textContent = "Swipe table horizontally →";
+      el.appendChild(hint);
+    });
+
+    const sectionJump = document.getElementById("section-jump");
+    if (sectionJump) {
+      sectionJump.addEventListener("change", (e) => {
+        const target = e.target.value;
+        if (!target) return;
+        const el = document.querySelector(target);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        e.target.value = "";
+      });
+    }
   </script>
 </body>
 </html>
